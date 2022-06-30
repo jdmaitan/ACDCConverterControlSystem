@@ -1,0 +1,69 @@
+LIBRARY IEEE;
+USE IEEE.STD_LOGIC_1164.ALL;
+USE IEEE.STD_LOGIC_ARITH.ALL;
+USE IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+ENTITY ZCD IS PORT(
+	Main_Clock:IN STD_LOGIC; 
+    Data_Adq_ADC1A:IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+    Data_Adq_ADC1B:IN STD_LOGIC_VECTOR (15 DOWNTO 0); 
+	Data_Adq_ADC2A:IN STD_LOGIC_VECTOR (15 DOWNTO 0); 
+	ZCD_SCR1:OUT STD_LOGIC;		
+	ZCD_SCR2:OUT STD_LOGIC; 		
+	ZCD_SCR3:OUT STD_LOGIC;		
+	ZCD_SCR4:OUT STD_LOGIC;	
+	ZCD_SCR5:OUT STD_LOGIC;		
+	ZCD_SCR6:OUT STD_LOGIC);		
+END ZCD;
+
+ARCHITECTURE Arq_ZCD OF ZCD IS
+
+SIGNAL Limite_Diferencia:INTEGER RANGE 0 TO 300:=240;
+SIGNAL IntData_ADC1A:STD_LOGIC_VECTOR (11 DOWNTO 0); 
+SIGNAL IntData_ADC1B:STD_LOGIC_VECTOR (11 DOWNTO 0); 
+SIGNAL IntData_ADC2A:STD_LOGIC_VECTOR (11 DOWNTO 0); 
+SIGNAL Va:INTEGER RANGE 0 TO 4095; 
+SIGNAL Vb:INTEGER RANGE 0 TO 4095; 
+SIGNAL Vc:INTEGER RANGE 0 TO 4095; 
+
+BEGIN
+	ZCDprocess:PROCESS(Main_Clock)
+	BEGIN
+		IF FALLING_EDGE(Main_Clock) THEN
+			IntData_ADC1A(11)<=NOT(Data_Adq_ADC1A(11));
+			IntData_ADC1A(10 DOWNTO 0)<=Data_Adq_ADC1A(10 DOWNTO 0);
+			Va<=Conv_integer(IntData_ADC1A);
+			IntData_ADC1B(11)<=NOT(Data_Adq_ADC1B(11));
+			IntData_ADC1B(10 DOWNTO 0)<=Data_Adq_ADC1B(10 DOWNTO 0);
+			Vb<=Conv_integer(IntData_ADC1B);
+			IntData_ADC2A(11)<=NOT(Data_Adq_ADC2A(11));
+			IntData_ADC2A(10 DOWNTO 0)<=Data_Adq_ADC2A(10 DOWNTO 0);
+			Vc<=Conv_integer(IntData_ADC2A);
+			
+			IF ((Va-Vc)>Limite_Diferencia) THEN
+				ZCD_SCR1<='1';
+				ZCD_SCR4<='0';
+			END IF;
+			IF ((Vb-Vc)>Limite_Diferencia) THEN
+				ZCD_SCR2<='1';
+				ZCD_SCR5<='0';
+			END IF;						
+			IF ((Vb-Va)>Limite_Diferencia) THEN
+				ZCD_SCR3<='1';
+				ZCD_SCR6<='0';
+			END IF;							
+			IF ((Vc-Va)>Limite_Diferencia) THEN
+				ZCD_SCR4<='1';
+				ZCD_SCR1<='0';
+			END IF;					
+			IF ((Vc-Vb)>Limite_Diferencia) THEN
+				ZCD_SCR5<='1';
+				ZCD_SCR2<='0';
+			END IF;			
+			IF ((Va-Vb)>Limite_Diferencia) THEN
+				ZCD_SCR6<='1';
+				ZCD_SCR3<='0';
+			END IF;					
+		END IF;		
+	END PROCESS;				
+END Arq_ZCD;
